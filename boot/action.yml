@@ -5,6 +5,9 @@ inputs:
   token:
     description: 'GitHub Repo scoped token'
     required: True
+  billing_id:
+    description: 'Billing ID for AWS resource tagging'
+    required: True
   project_name:
     description: 'Project Name for searching EC2 instance with ProjectName tag'
     required: True

@@ -7,6 +7,7 @@ env:
   AWS_REGION: ap-southeast-2
   AWS_ACCESS_KEY_ID: XXXXXXXXXXXXXXXXXXXX
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  BILLING_ID: GITHUB
   PROJECT_NAME: GitHub
 
 jobs:
@@ -32,6 +33,7 @@ jobs:
         uses: acerorg/gha-runner/boot@v0
         with:
           token: ${{ secrets.MINERVA_GH_REPO_SCOPED_TOKEN }}
+          billing_id: ${{ env.BILLING_ID }}
           project_name: ${{ env.PROJECT_NAME }}
           runner_name: ${{ matrix.runner_name }}
           runner_tags: ${{ matrix.extra_tags }}

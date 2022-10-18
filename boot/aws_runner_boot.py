@@ -2,7 +2,7 @@ import os
 import boto3
 
 def handler() -> dict:
-    billing_id = os.environ.get('BILLING_ID', 'GitHub')
+    billing_id = os.environ.get('BILLING_ID', 'GITHUB')
     project_name = os.environ.get('PROJECT_NAME', 'GitHub')
     repo_name = os.environ.get('REPO_NAME', 'acerorg/acerorg')
     runner_name = os.environ.get('RUNNER_NAME', 'runner-001')
