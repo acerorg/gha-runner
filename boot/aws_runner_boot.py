@@ -90,7 +90,6 @@ sudo -u ec2-user bash -c "./config.sh --unattended --url 'https://github.com/{re
     request_id = response['Instances'][0]['SpotInstanceRequestId']
 
     ec2_client.get_waiter('instance_running').wait(InstanceIds=[ec2_instance_id], WaiterConfig={'Delay': 2, 'MaxAttempts': 90})
-    ec2_client.get_waiter('instance_status_ok').wait(InstanceIds=[ec2_instance_id], WaiterConfig={'Delay': 2, 'MaxAttempts': 90})
 
     return {'ec2_id': ec2_instance_id, 'request_id': request_id}
 
