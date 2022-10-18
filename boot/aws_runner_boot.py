@@ -2,12 +2,17 @@ import os
 import boto3
 
 def handler() -> dict:
+    print(os.environ.get('RUNNER_NAME'))
+    print('\n')
+    print(os.environ)
+    print('\n')
+    return {'ec2_id': 'ec2_instance_id', 'request_id': 'request_id'}
+
     billing_id = os.environ.get('BILLING_ID', 'GITHUB')
     project_name = os.environ.get('PROJECT_NAME', 'GitHub')
     repo_name = os.environ.get('REPO_NAME', 'acerorg/acerorg')
     runner_name = os.environ.get('RUNNER_NAME', 'runner-001')
 
-    print(f'1 runner_name = {runner_name}')
     runner_tags = os.environ.get('RUNNER_TAGS', 'general')
     runner_ip = os.environ.get('RUNNER_IP', '1.2.3.4')
     subnet_id = os.environ.get('SUBNET_ID', 'subnet-00000000000000000')
@@ -20,11 +25,8 @@ def handler() -> dict:
     gh_action_dl_url = os.environ.get('GH_ACTION_APP_DL_URL', 'https://github.com/actions/runner/releases/download/v2.298.2/actions-runner-linux-x64-2.298.2.tar.gz')
     region = os.environ.get('AWS_REGION', 'ap-southeast-2')
 
-    # #################################
-
     template_name = f'GitHub/Runner/{repo_name}'
     ec2_client = boto3.client('ec2', region_name=region)
-    print(f'2 runner_name = {runner_name}')
     tags = [
         {'Key': 'BillingID', 'Value': billing_id},
         {'Key': 'ProjectName', 'Value': project_name},
@@ -51,8 +53,6 @@ def handler() -> dict:
             'Encrypted': True
         },
     },]
-
-    # #################################
 
     ec2_client.modify_launch_template(LaunchTemplateName=template_name, DefaultVersion='$Latest')
 
