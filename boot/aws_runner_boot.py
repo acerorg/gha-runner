@@ -20,22 +20,6 @@ def handler() -> dict:
     repo_name = os.environ.get('GITHUB_REPOSITORY', 'acerorg/acerorg')
     region = os.environ.get('AWS_REGION', 'ap-southeast-2')
 
-    print('\n')
-    print(f'billing_id  =  "{billing_id}"\n')
-    print(f'project_name  =  "{project_name}"\n')
-    print(f'runner_name  =  "{runner_name}"\n')
-    print(f'runner_tags  =  "{runner_tags}"\n')
-    print(f'runner_ip  =  "{runner_ip}"\n')
-    print(f'subnet_id  =  "{subnet_id}"\n')
-    print(f'instanct_type  =  "{instanct_type}"\n')
-    print(f'disk_size  =  "{disk_size}"\n')
-    print(f'user_data  =  "{user_data}"\n')
-    print(f'gh_action_token  =  "{gh_action_token}"\n')
-    print(f'gh_action_dl_url  =  "{gh_action_dl_url}"\n')
-    print('\n')
-    return {'ec2_id': 'ec2_instance_id', 'request_id': 'request_id'}
-
-
     template_name = f'GitHub/Runner/{repo_name}'
     ec2_client = boto3.client('ec2', region_name=region)
     tags = [
@@ -54,7 +38,6 @@ def handler() -> dict:
         {'ResourceType': 'network-interface', 'Tags': tags},
         {'ResourceType': 'spot-instances-request', 'Tags': tags},
     ]
-    print(f'3 tag_spec = {tag_spec}')
     block_device_mappings = [{
         'DeviceName': '/dev/xvda',
         'Ebs': {

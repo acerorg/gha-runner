@@ -49,7 +49,7 @@ runs:
                           | select(.name | contains(\"trim\") | not) \
                           | .browser_download_url " \
                   | head -1)"
-        echo "GH_ACTION_APP_DL_URL=${dl_url}" | tee -a $GITHUB_OUTPUT
+        echo "URL=${dl_url}" | tee -a $GITHUB_OUTPUT
 
     - name: Prepare GitHub Action's registration-token
       shell: bash
@@ -60,7 +60,7 @@ runs:
                                  "${{ github.api_url }}/repos/${{ github.repository }}/actions/runners/registration-token" \
                 | jq -r '.token')"
         echo "::add-mask::${token}"
-        echo "GH_ACTION_TOKEN=${token}" | tee -a $GITHUB_OUTPUT
+        echo "TOKEN=${token}" | tee -a $GITHUB_OUTPUT
 
     - uses: actions/setup-python@v4
       with:
@@ -80,13 +80,12 @@ runs:
         E_INSTANCE_TYPE: ${{ inputs.instance_type}}
         E_DISK_SIZE: ${{ inputs.disk_size }}
         E_USER_DATA: ${{ inputs.user_data }}
-        E_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.GH_ACTION_TOKEN }}
-        E_URL: ${{ steps.get-github-action-app-dl-url.outputs.GH_ACTION_APP_DL_URL }}
+        E_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.TOKEN }}
+        E_URL: ${{ steps.get-github-action-app-dl-url.outputs.URL }}
       run: |
-        python "${{ github.action_path }}/aws_runner_boot.py"
-        # ids="$(python "${{ github.action_path }}/aws_runner_boot.py")"
-        # echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')"
-        # echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')"
+        ids="$(python "${{ github.action_path }}/aws_runner_boot.py")"
+        echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')"
+        echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')"
       shell: bash
 
     - name: Wait for Runner become Available and "online" in GitHub
