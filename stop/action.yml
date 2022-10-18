@@ -5,9 +5,6 @@ inputs:
   token:
     description: 'GitHub Repo scoped token'
     required: True
-  project_name:
-    description: 'Project Name for searching EC2 instance with ProjectName tag'
-    required: True
   runner_name:
     description: 'Runner registered name on GitHub Actions'
     required: True
@@ -28,7 +25,6 @@ runs:
     - name: Ec2 Runner (running python script)
       id: ec2-runner
       env:
-        E_PROJECT_NAME: ${{ inputs.project_name }}
         E_RUNNER_NAME: ${{ inputs.runner_name }}
         E_RUNNER_IP: ${{ inputs.runner_ip }}
       run: |

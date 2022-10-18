@@ -7,7 +7,6 @@ def handler(action: str) -> dict:
     if action not in availabe_actions:
         raise Exception(f'Invalid action: "{action}", it must be one of {availabe_actions}.')
 
-    project_name = os.environ.get('E_PROJECT_NAME', 'GitHub')
     runner_name = os.environ.get('E_RUNNER_NAME', 'runner-001')
     runner_ip = os.environ.get('E_RUNNER_IP', '1.2.3.4')
 
@@ -19,7 +18,6 @@ def handler(action: str) -> dict:
 
     filters = [
         {"Name": "instance-state-name", "Values": ["pending", 'running', 'shutting-down', 'stopping', 'stopped']},
-        {"Name": "tag:ProjectName", "Values": [project_name]},
         {"Name": "tag:EnvName", "Values": [f'GitHub Action Runner @ {repo_name}']},
         {"Name": "tag:RepoName", "Values": [repo_name]},
         {"Name": "tag:GitHub", "Values": ["ActionRunner"]},
