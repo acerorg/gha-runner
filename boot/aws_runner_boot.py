@@ -2,28 +2,39 @@ import os
 import boto3
 
 def handler() -> dict:
-    print(os.environ.get('RUNNER_NAME'))
+    billing_id = os.environ.get('E_BILLING_ID', 'GITHUB')
+    project_name = os.environ.get('E_PROJECT_NAME', 'GitHub')
+
+    runner_name = os.environ.get('E_RUNNER_NAME', 'runner-001')
+    runner_tags = os.environ.get('E_RUNNER_TAGS', 'general')
+    runner_ip = os.environ.get('E_RUNNER_IP', '1.2.3.4')
+    subnet_id = os.environ.get('E_SUBNET_ID', 'subnet-00000000000000000')
+
+    instanct_type = os.environ.get('E_INSTANCE_TYPE', 'c5n.xlarge')
+    disk_size = int(os.environ.get('E_DISK_SIZE', 10))
+    user_data = os.environ.get('E_USER_DATA', 'echo "Please provide your user data to init the runner"\n')
+
+    gh_action_token = os.environ.get('E_TOKEN', 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+    gh_action_dl_url = os.environ.get('E_URL', 'https://github.com/actions/runner/releases/download/v2.298.2/actions-runner-linux-x64-2.298.2.tar.gz')
+
+    repo_name = os.environ.get('GITHUB_REPOSITORY', 'acerorg/acerorg')
+    region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+
     print('\n')
-    print(os.environ)
+    print(f'billing_id  =  "{billing_id}"\n')
+    print(f'project_name  =  "{project_name}"\n')
+    print(f'runner_name  =  "{runner_name}"\n')
+    print(f'runner_tags  =  "{runner_tags}"\n')
+    print(f'runner_ip  =  "{runner_ip}"\n')
+    print(f'subnet_id  =  "{subnet_id}"\n')
+    print(f'instanct_type  =  "{instanct_type}"\n')
+    print(f'disk_size  =  "{disk_size}"\n')
+    print(f'user_data  =  "{user_data}"\n')
+    print(f'gh_action_token  =  "{gh_action_token}"\n')
+    print(f'gh_action_dl_url  =  "{gh_action_dl_url}"\n')
     print('\n')
     return {'ec2_id': 'ec2_instance_id', 'request_id': 'request_id'}
 
-    billing_id = os.environ.get('BILLING_ID', 'GITHUB')
-    project_name = os.environ.get('PROJECT_NAME', 'GitHub')
-    repo_name = os.environ.get('REPO_NAME', 'acerorg/acerorg')
-    runner_name = os.environ.get('RUNNER_NAME', 'runner-001')
-
-    runner_tags = os.environ.get('RUNNER_TAGS', 'general')
-    runner_ip = os.environ.get('RUNNER_IP', '1.2.3.4')
-    subnet_id = os.environ.get('SUBNET_ID', 'subnet-00000000000000000')
-
-    instanct_type = os.environ.get('EC2_INSTANCE_TYPE', 'c5n.xlarge')
-    disk_size = int(os.environ.get('EC2_DISK_SIZE', 10))
-    user_data = os.environ.get('EC2_USER_DATA', 'echo "Please provide your user data to init the runner"\n')
-
-    gh_action_token = os.environ.get('GH_ACTION_TOKEN', 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-    gh_action_dl_url = os.environ.get('GH_ACTION_APP_DL_URL', 'https://github.com/actions/runner/releases/download/v2.298.2/actions-runner-linux-x64-2.298.2.tar.gz')
-    region = os.environ.get('AWS_REGION', 'ap-southeast-2')
 
     template_name = f'GitHub/Runner/{repo_name}'
     ec2_client = boto3.client('ec2', region_name=region)

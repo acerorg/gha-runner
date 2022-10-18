@@ -71,18 +71,17 @@ runs:
 
     - name: Boot Ec2 Runner (running python script)
       env:
-        BILLING_ID: ${{ inputs.billing_id }}
-        PROJECT_NAME: ${{ inputs.project_name }}
-        REPO_NAME: ${{ github.repository }}
-        RUNNER_NAME: ${{ inputs.runner_name }}
-        RUNNER_TAGS: ${{ inputs.runner_tags }}
-        RUNNER_IP: ${{ inputs.runner_ip }}
-        SUBNET_ID: ${{ inputs.subnet_id }}
-        EC2_INSTANCE_TYPE: ${{ inputs.instance_type}}
-        EC2_DISK_SIZE: ${{ inputs.disk_size }}
-        EC2_USER_DATA: ${{ inputs.user_data }}
-        GH_ACTION_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.GH_ACTION_TOKEN }}
-        GH_ACTION_APP_DL_URL: ${{ steps.get-github-action-app-dl-url.outputs.GH_ACTION_APP_DL_URL }}
+        E_BILLING_ID: ${{ inputs.billing_id }}
+        E_PROJECT_NAME: ${{ inputs.project_name }}
+        E_RUNNER_NAME: ${{ inputs.runner_name }}
+        E_RUNNER_TAGS: ${{ inputs.runner_tags }}
+        E_RUNNER_IP: ${{ inputs.runner_ip }}
+        E_SUBNET_ID: ${{ inputs.subnet_id }}
+        E_INSTANCE_TYPE: ${{ inputs.instance_type}}
+        E_DISK_SIZE: ${{ inputs.disk_size }}
+        E_USER_DATA: ${{ inputs.user_data }}
+        E_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.GH_ACTION_TOKEN }}
+        E_URL: ${{ steps.get-github-action-app-dl-url.outputs.GH_ACTION_APP_DL_URL }}
       run: |
         python "${{ github.action_path }}/aws_runner_boot.py"
         # ids="$(python "${{ github.action_path }}/aws_runner_boot.py")"
