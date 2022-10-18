@@ -6,6 +6,8 @@ def handler() -> dict:
     project_name = os.environ.get('PROJECT_NAME', 'GitHub')
     repo_name = os.environ.get('REPO_NAME', 'acerorg/acerorg')
     runner_name = os.environ.get('RUNNER_NAME', 'runner-001')
+
+    print(f'1 runner_name = {runner_name}')
     runner_tags = os.environ.get('RUNNER_TAGS', 'general')
     runner_ip = os.environ.get('RUNNER_IP', '1.2.3.4')
     subnet_id = os.environ.get('SUBNET_ID', 'subnet-00000000000000000')
@@ -22,6 +24,7 @@ def handler() -> dict:
 
     template_name = f'GitHub/Runner/{repo_name}'
     ec2_client = boto3.client('ec2', region_name=region)
+    print(f'2 runner_name = {runner_name}')
     tags = [
         {'Key': 'BillingID', 'Value': billing_id},
         {'Key': 'ProjectName', 'Value': project_name},
@@ -38,6 +41,7 @@ def handler() -> dict:
         {'ResourceType': 'network-interface', 'Tags': tags},
         {'ResourceType': 'spot-instances-request', 'Tags': tags},
     ]
+    print(f'3 tag_spec = {tag_spec}')
     block_device_mappings = [{
         'DeviceName': '/dev/xvda',
         'Ebs': {
