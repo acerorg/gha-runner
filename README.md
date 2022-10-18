@@ -35,5 +35,5 @@ jobs:
         with:
           token: ${{ secrets.TOKEN }}
           runner_name: ${{ matrix.runner_name }}
-          runner_ip: ${{ matrix.runner_ip }}
+          runner_ip: ${{ matrix.ip }}
 ```

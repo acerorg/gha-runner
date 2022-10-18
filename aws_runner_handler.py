@@ -45,4 +45,5 @@ def handler(action: str) -> dict:
 
 if __name__ == '__main__':
     action = sys.argv[1]  # start, stop, terminate
-    handler(action)
+    response = handler(action)
+    print(f"{response['ec2_id']},{response['request_id']}")
