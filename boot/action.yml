@@ -55,7 +55,6 @@ runs:
       shell: bash
       id: gen-github-action-registration-token
       run: |
-        echo "::add-mask::${{ inputs.token }}"
         token="$(curl -X POST -s -u "git:${{ inputs.token }}" \
                                  -H "Accept: application/vnd.github.v3+json" \
                                  "${{ github.api_url }}/repos/${{ github.repository }}/actions/runners/registration-token" \
@@ -85,7 +84,8 @@ runs:
         GH_ACTION_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.GH_ACTION_TOKEN }}
         GH_ACTION_APP_DL_URL: ${{ steps.get-github-action-app-dl-url.outputs.GH_ACTION_APP_DL_URL }}
       run: |
-        echo "::add-mask::${{ env.GH_ACTION_TOKEN }}"
+        # echo "::add-mask::${{ env.GH_ACTION_TOKEN }}"
+        echo "${{ env.RUNNER_NAME }}"
         ids=$(python ${{ github.action_path }}/aws_runner_boot.py)
         echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')"
         echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')"
