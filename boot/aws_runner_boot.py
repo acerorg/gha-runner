@@ -80,7 +80,7 @@ k+=",{runner_name}"
 k+=",{runner_tags}"
 k+=",$(hostname -I | awk '{{print $1}}')"
 
-sudo -u ec2-user bash -c "./config.sh --unattended --url 'https://github.com/acerorg/{repo_name}' --token {gh_action_token} --labels '${{k}}' --name '{runner_name}'"
+sudo -u ec2-user bash -c "./config.sh --unattended --url 'https://github.com/{repo_name}' --token {gh_action_token} --labels '${{k}}' --name '{runner_name}'"
 ./svc.sh install ec2-user
 ./svc.sh start
                 ''',
