@@ -89,7 +89,7 @@ runs:
       shell: bash
 
     - name: Wait for Runner become Available and "online" in GitHub
-      uses: acerorg/gha-waiter
+      uses: acerorg/gha-waiter@v0
       with:
         delay: 15
         max_attempts: 30
