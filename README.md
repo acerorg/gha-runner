@@ -20,10 +20,6 @@ jobs:
             subnet_id: subnet-00000000000000000
             ip: 10.0.0.2
             extra_tags: general,runner
-          - runner_name: runner-002
-            subnet_id: subnet-00000000000000000
-            ip: 10.0.0.3
-            extra_tags: general,runner
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ matrix.runner_name }}
@@ -32,7 +28,7 @@ jobs:
       - name: Boot Runner
         uses: acerorg/gha-runner/boot@v0
         with:
-          token: ${{ secrets.MINERVA_GH_REPO_SCOPED_TOKEN }}
+          token: ${{ secrets.TOKEN }}
           billing_id: ${{ env.BILLING_ID }}
           project_name: ${{ env.PROJECT_NAME }}
           runner_name: ${{ matrix.runner_name }}
