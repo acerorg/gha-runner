@@ -57,7 +57,7 @@ def handler() -> dict:
         MaxCount=1,
         MinCount=1,
         SubnetId=subnet_id,
-        PrivateIpAddress=ipv4_address,
+        PrivateIpAddress=runner_ip,
         InstanceType=instanct_type,
         BlockDeviceMappings=block_device_mappings,
         TagSpecifications=tag_spec,
