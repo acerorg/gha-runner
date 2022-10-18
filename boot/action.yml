@@ -91,8 +91,8 @@ runs:
     - name: Wait for Runner become Available and "online" in GitHub
       uses: acerorg/gha-waiter@v0
       with:
-        delay: 1
-        max_attempts: 1
+        delay: 15
+        max_attempts: 30
         expected_result: online
         checker_cmd: |
           curl -s -u "git:${{ inputs.token }}" \
