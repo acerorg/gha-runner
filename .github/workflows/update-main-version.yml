@@ -9,11 +9,8 @@ on:
         required: true
       main_version:
         required: true
-        type: choice
         description: The main version to update
         default: v0
-        options:
-          - v0
 
 jobs:
   tag:
