@@ -1,0 +1,57 @@
+name: 'Self-Hosted Runner'
+description: 'Stopping/Starting/Removing a self-hosted runner for github repo'
+
+inputs:
+  token:
+    description: 'GitHub Repo scoped token'
+    required: True
+  runner_name:
+    description: 'Runner registered name on GitHub Actions'
+    required: True
+  runner_ip:
+    description: 'Private IP v4 addres for the EC2 instance Runner'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - run: pip install boto3
+      shell: bash
+
+    - name: Ec2 Runner (running python script)
+      id: ec2-runner
+      env:
+        E_RUNNER_NAME: ${{ inputs.runner_name }}
+        E_RUNNER_IP: ${{ inputs.runner_ip }}
+      run: |
+        ids="$(python "${{ github.action_path }}/../aws_runner_handler.py" start)"
+        echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')" | tee -a $GITHUB_OUTPUT
+        echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')" | tee -a $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Wait for spot instance requests to become "active" in AWS
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 5
+        max_attempts: 30
+        expected_result: active
+        checker_cmd: |
+          aws ec2 describe-spot-instance-requests \
+                  --spot-instance-request-ids ${{ steps.ec2-runner.outputs.REQUEST_ID }} \
+          | jq -r '.SpotInstanceRequests[0].State'
+
+    - name: Wait for Runner become "online" in GitHub
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 5
+        max_attempts: 30
+        expected_result: online
+        checker_cmd: |
+          curl -s -u "git:${{ inputs.token }}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  ${{ github.api_url }}/repos/${{ github.repository }}/actions/runners \
+          | jq -r ".runners[] | select(.name | contains(\"${{ inputs.runner_name }}\")) | .status"
