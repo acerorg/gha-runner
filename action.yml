@@ -1,0 +1,101 @@
+name: 'Self-Hosted Runner'
+description: 'Stopping/Starting/Removing a self-hosted runner for github repo'
+
+inputs:
+  token:
+    description: 'GitHub Repo scoped token'
+    required: True
+  runner_name:
+    description: 'Runner registered name on GitHub Actions'
+    required: True
+  runner_ip:
+    description: 'Private IP v4 addres for the EC2 instance Runner'
+    required: true
+  action:
+    description: 'start/stop/remove'
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: set variables
+      id: vars
+      shell: bash
+      run: |
+        if [[ "${{ input.action }}" == "start" ]]; then
+          echo "This is start action."
+          echo "aws_status=active" | tee -a $GITHUB_OUTPUT
+          echo "gh_status=online" | tee -a $GITHUB_OUTPUT
+        elif [[ "${{ input.action }}" == "stop" ]]; then
+          echo "This is stop action."
+          echo "aws_status=disabled" | tee -a $GITHUB_OUTPUT
+          echo "gh_status=offline" | tee -a $GITHUB_OUTPUT
+        elif [[ "${{ input.action }}" == "remove" ]]; then
+          echo "This is remove action."
+        else
+          echo "Error: Bad action: '${{ input.action }}'"
+          exit 1
+        fi
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - run: pip install boto3
+      shell: bash
+
+    - name: Ec2 Runner (running python script)
+      id: ec2-runner
+      env:
+        E_RUNNER_NAME: ${{ inputs.runner_name }}
+        E_RUNNER_IP: ${{ inputs.runner_ip }}
+      run: |
+        ids="$(python "${{ github.action_path }}/aws_runner_handler.py" ${{ inputs.action }})"
+        echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')" | tee -a $GITHUB_OUTPUT
+        echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')" | tee -a $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Wait for spot instance requests to become "${{ steps.vars.outputs.aws_status }}" in AWS
+      if: inputs.action == 'start' || inputs.action == 'stop'
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 5
+        max_attempts: 30
+        expected_result: ${{ steps.vars.outputs.aws_status }}
+        checker_cmd: |
+          aws ec2 describe-spot-instance-requests \
+                  --spot-instance-request-ids ${{ steps.ec2-runner.outputs.REQUEST_ID }} \
+          | jq -r '.SpotInstanceRequests[0].State'
+
+    - name: Wait for Runner become "${{ steps.vars.outputs.gh_status }}" in GitHub
+      if: inputs.action == 'start' || inputs.action == 'stop'
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 5
+        max_attempts: 30
+        expected_result: ${{ steps.vars.outputs.gh_status }}
+        checker_cmd: |
+          curl -s -u "git:${{ inputs.token }}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  ${{ github.api_url }}/repos/${{ github.repository }}/actions/runners \
+          | jq -r ".runners[] | select(.name | contains(\"${{ inputs.runner_name }}\")) | .status"
+
+    - name: Get Self-hosted Runner ID from GitHub
+      if: inputs.action == 'remove'
+      id: get-runner-id
+      shell: bash
+      run: |
+        gh_runner_id="$(curl -s -u "git:${{ inputs.token }}" \
+                             -H "Accept: application/vnd.github.v3+json" \
+                             ${{ github.api_url }}/repos/${{ github.repository }}/actions/runners \
+                        | jq -r ".runners[] | select(.name | contains(\"${{ inputs.runner_name }}\")) | .id")"
+        echo "ID=${gh_runner_id}" | tee -a $GITHUB_OUTPUT
+
+    - name: Remove Self-hosted Runner from GitHub
+      if: inputs.action == 'remove'
+      shell: bash
+      run: |
+        curl -X DELETE -L -o - -u "git:${{ inputs.token }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "${{ github.api_url }}/repos/${{ github.repository }}/actions/runners/${{ steps.get-runner-id.outputs.ID }}"

@@ -3,7 +3,7 @@ import sys
 import boto3
 
 def handler(action: str) -> dict:
-    availabe_actions = ['start', 'stop', 'terminate']
+    availabe_actions = ['start', 'stop', 'remove']
     if action not in availabe_actions:
         raise Exception(f'Invalid action: "{action}", it must be one of {availabe_actions}.')
 
@@ -33,7 +33,7 @@ def handler(action: str) -> dict:
         if action=='stop':
             ec2_client.stop_instances(InstanceIds=[instance.id])
             ec2_client.get_waiter('instance_stopped').wait(InstanceIds=[instance.id], WaiterConfig={'Delay': 2, 'MaxAttempts': 90})
-        if action=='terminate':
+        if action=='remove':
             ec2_client.cancel_spot_instance_requests(SpotInstanceRequestIds=[instance.spot_instance_request_id])
             ec2_client.terminate_instances(InstanceIds=[instance.id])
             ec2_client.get_waiter('instance_terminated').wait(InstanceIds=[instance.id], WaiterConfig={'Delay': 2, 'MaxAttempts': 90})
