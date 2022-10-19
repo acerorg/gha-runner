@@ -29,8 +29,8 @@ runs:
         E_RUNNER_IP: ${{ inputs.runner_ip }}
       run: |
         ids="$(python "${{ github.action_path }}/../aws_runner_handler.py" stop)"
-        echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')"
-        echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')"
+        echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')" | tee -a $GITHUB_OUTPUT
+        echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')" | tee -a $GITHUB_OUTPUT
       shell: bash
 
     - name: Wait for spot instance requests to become "disabled" in AWS
