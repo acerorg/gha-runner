@@ -2,37 +2,17 @@
 
 ## Example:
 
-```yml
-env:
-  AWS_REGION: ap-southeast-2
-  AWS_ACCESS_KEY_ID: XXXXXXXXXXXXXXXXXXXX
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  BILLING_ID: GITHUB
-  PROJECT_NAME: GitHub
+To Boot up:
 
+```yml
 jobs:
   boot_runners:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner_name: runner-001
-            subnet_id: subnet-00000000000000000
-            ip: 10.0.0.2
-            extra_tags: general,runner
-          - runner_name: runner-002
-            subnet_id: subnet-00000000000000000
-            ip: 10.0.0.3
-            extra_tags: general,runner
     runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ matrix.runner_name }}
-      cancel-in-progress: false
     steps:
       - name: Boot Runner
         uses: acerorg/gha-runner/boot@v0
         with:
-          token: ${{ secrets.MINERVA_GH_REPO_SCOPED_TOKEN }}
+          token: ${{ secrets.TOKEN }}
           billing_id: ${{ env.BILLING_ID }}
           project_name: ${{ env.PROJECT_NAME }}
           runner_name: ${{ matrix.runner_name }}
@@ -41,4 +21,52 @@ jobs:
           subnet_id: ${{ matrix.subnet_id }}
           user_data: |
             echo "install some other tools, etc..."
+```
+
+To Stop:
+
+```yml
+jobs:
+  stop_runners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop Runner
+        uses: acerorg/gha-runner@v0
+        with:
+          action: stop
+          token: ${{ secrets.TOKEN }}
+          runner_name: ${{ matrix.runner_name }}
+          runner_ip: ${{ matrix.ip }}
+```
+
+To Start:
+
+```yml
+jobs:
+  start_runners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start Runner
+        uses: acerorg/gha-runner@v0
+        with:
+          action: start
+          token: ${{ secrets.TOKEN }}
+          runner_name: ${{ matrix.runner_name }}
+          runner_ip: ${{ matrix.ip }}
+```
+
+To Remove:
+
+```yml
+jobs:
+  remove_runners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Runner
+        uses: acerorg/gha-runner@v0
+        with:
+          action: remove
+          token: ${{ secrets.TOKEN }}
+          runner_name: ${{ matrix.runner_name }}
+          runner_ip: ${{ matrix.ip }}
 ```

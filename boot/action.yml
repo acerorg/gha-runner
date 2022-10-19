@@ -49,7 +49,7 @@ runs:
                           | select(.name | contains(\"trim\") | not) \
                           | .browser_download_url " \
                   | head -1)"
-        echo "GH_ACTION_APP_DL_URL=${dl_url}" | tee -a $GITHUB_OUTPUT
+        echo "URL=${dl_url}" | tee -a $GITHUB_OUTPUT
 
     - name: Prepare GitHub Action's registration-token
       shell: bash
@@ -60,7 +60,7 @@ runs:
                                  "${{ github.api_url }}/repos/${{ github.repository }}/actions/runners/registration-token" \
                 | jq -r '.token')"
         echo "::add-mask::${token}"
-        echo "GH_ACTION_TOKEN=${token}" | tee -a $GITHUB_OUTPUT
+        echo "TOKEN=${token}" | tee -a $GITHUB_OUTPUT
 
     - uses: actions/setup-python@v4
       with:
@@ -71,20 +71,19 @@ runs:
 
     - name: Boot Ec2 Runner (running python script)
       env:
-        BILLING_ID: ${{ inputs.billing_id }}
-        PROJECT_NAME: ${{ inputs.project_name }}
-        REPO_NAME: ${{ github.repository }}
-        RUNNER_NAME: ${{ inputs.runner_name }}
-        RUNNER_TAGS: ${{ inputs.runner_tags }}
-        RUNNER_IP: ${{ inputs.runner_ip }}
-        SUBNET_ID: ${{ inputs.subnet_id }}
-        EC2_INSTANCE_TYPE: ${{ inputs.instance_type}}
-        EC2_DISK_SIZE: ${{ inputs.disk_size }}
-        EC2_USER_DATA: ${{ inputs.user_data }}
-        GH_ACTION_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.GH_ACTION_TOKEN }}
-        GH_ACTION_APP_DL_URL: ${{ steps.get-github-action-app-dl-url.outputs.GH_ACTION_APP_DL_URL }}
+        E_BILLING_ID: ${{ inputs.billing_id }}
+        E_PROJECT_NAME: ${{ inputs.project_name }}
+        E_RUNNER_NAME: ${{ inputs.runner_name }}
+        E_RUNNER_TAGS: ${{ inputs.runner_tags }}
+        E_RUNNER_IP: ${{ inputs.runner_ip }}
+        E_SUBNET_ID: ${{ inputs.subnet_id }}
+        E_INSTANCE_TYPE: ${{ inputs.instance_type}}
+        E_DISK_SIZE: ${{ inputs.disk_size }}
+        E_USER_DATA: ${{ inputs.user_data }}
+        E_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.TOKEN }}
+        E_URL: ${{ steps.get-github-action-app-dl-url.outputs.URL }}
       run: |
-        ids=$(python ${{ github.action_path }}/aws_runner_boot.py)
+        ids="$(python "${{ github.action_path }}/aws_runner_boot.py")"
         echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')"
         echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')"
       shell: bash
