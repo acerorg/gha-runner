@@ -23,18 +23,18 @@ runs:
       id: vars
       shell: bash
       run: |
-        if [[ "${{ input.action }}" == "start" ]]; then
+        if [[ "${{ inputs.action }}" == "start" ]]; then
           echo "This is start action."
           echo "aws_status=active" | tee -a $GITHUB_OUTPUT
           echo "gh_status=online" | tee -a $GITHUB_OUTPUT
-        elif [[ "${{ input.action }}" == "stop" ]]; then
+        elif [[ "${{ inputs.action }}" == "stop" ]]; then
           echo "This is stop action."
           echo "aws_status=disabled" | tee -a $GITHUB_OUTPUT
           echo "gh_status=offline" | tee -a $GITHUB_OUTPUT
-        elif [[ "${{ input.action }}" == "remove" ]]; then
+        elif [[ "${{ inputs.action }}" == "remove" ]]; then
           echo "This is remove action."
         else
-          echo "Error: Bad action: '${{ input.action }}'"
+          echo "Error: Bad action: '${{ inputs.action }}'"
           exit 1
         fi
 
