@@ -8,6 +8,7 @@ on:
         description: The tag or reference to use
         required: true
       main_version:
+        required: true
         type: choice
         description: The main version to update
         default: v0
