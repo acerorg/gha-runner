@@ -31,8 +31,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Stop Runner
-        uses: acerorg/gha-runner/stop@v0
+        uses: acerorg/gha-runner@v0
         with:
+          action: stop
+          token: ${{ secrets.TOKEN }}
+          runner_name: ${{ matrix.runner_name }}
+          runner_ip: ${{ matrix.ip }}
+```
+
+To Start:
+
+```yml
+jobs:
+  start_runners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start Runner
+        uses: acerorg/gha-runner@v0
+        with:
+          action: start
+          token: ${{ secrets.TOKEN }}
+          runner_name: ${{ matrix.runner_name }}
+          runner_ip: ${{ matrix.ip }}
+```
+
+To Remove:
+
+```yml
+jobs:
+  remove_runners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Runner
+        uses: acerorg/gha-runner@v0
+        with:
+          action: remove
           token: ${{ secrets.TOKEN }}
           runner_name: ${{ matrix.runner_name }}
           runner_ip: ${{ matrix.ip }}
