@@ -61,7 +61,8 @@ runs:
         echo "token=${token}" | tee -a $GITHUB_OUTPUT
         echo "runners_data_file=${runners_data_file}" | tee -a $GITHUB_OUTPUT
 
-    - uses: ${{ github.action_path }}/.actions/use-python
+    - uses: ./.actions/use-python
+      working-directory: ${{ github.action_path }}
 
     - name: Get runner details
       id: get-runner-details
