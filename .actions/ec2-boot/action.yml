@@ -1,0 +1,104 @@
+name: Boot EC2 Instance
+description: Boot up a EC2 Instance as github self-hosted runner
+inputs:
+  scope:
+    description: 'org or repo, organization or repository level'
+    default: repo
+    required: True
+  TOKEN:
+    description: 'GitHub self-hosted runner registration token'
+    required: True
+  RUNNER_NAME:
+    description: 'GitHub self-hosted runner name'
+    required: True
+  RUNNER_TAGS:
+    description: 'GitHub self-hosted runner extra tags'
+    required: True
+  DISK_SIZE:
+    description: 'GitHub self-hosted runner disk capacity in GB'
+    required: True
+  SUBNET_ID:
+    description: 'GitHub self-hosted runner subnet id'
+    required: True
+  IP:
+    description: 'GitHub self-hosted runner ipv4 address'
+    required: True
+  INSTANCE_TYPE:
+    description: 'GitHub self-hosted runner instance type'
+    required: True
+
+runs:
+  using: "composite"
+  steps:
+    - shell: python
+      run: |
+        import boto3
+        import os
+
+        runner_label = '${{ github.repository_owner }}' if '${{ inputs.scope }}' == 'org' else '${{ github.repository }}'
+        region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+        billing_id = os.environ.get('BILLING_ID', 'ACERORG')
+        project_name = os.environ.get('PROJECT_NAME', 'GitHub')
+        ec2_client = boto3.client('ec2', region_name=region)
+        template_name = f'GitHub/Runner/${{ github.repository_owner }}'
+
+        tags = [
+          {'Key': 'BillingID', 'Value': billing_id},
+          {'Key': 'ProjectName', 'Value': project_name},
+          {'Key': 'EnvName', 'Value': f'GitHub Action Runner @ {runner_label}'},
+          {'Key': 'RepoName', 'Value': runner_label},
+          {'Key': 'GitHub', 'Value': 'ActionRunner'},
+          {'Key': 'Name', 'Value': f'GitHub/Runner/{runner_label}/${{ inputs.RUNNER_NAME }}'},
+          {'Key': 'RunnerTags', 'Value': '${{ inputs.RUNNER_TAGS }}'},
+          {'Key': 'RunnerName', 'Value': '${{ inputs.RUNNER_NAME }}'},
+        ]
+        tag_spec = [
+          {'ResourceType': 'instance', 'Tags': tags},
+          {'ResourceType': 'volume', 'Tags': tags},
+          {'ResourceType': 'network-interface', 'Tags': tags},
+          {'ResourceType': 'spot-instances-request', 'Tags': tags},
+        ]
+        block_device_mappings = [{
+          'DeviceName': '/dev/xvda',
+          'Ebs': {
+            'DeleteOnTermination': True,
+            'VolumeSize': ${{ inputs.DISK_SIZE }},
+            'VolumeType': 'gp3',
+            'Encrypted': True,
+          },
+        },]
+
+        response = ec2_client.run_instances(
+          LaunchTemplate={'LaunchTemplateName': template_name},
+          MaxCount=1,
+          MinCount=1,
+          SubnetId="${{ inputs.SUBNET_ID }}",
+          PrivateIpAddress="${{ inputs.IP }}",
+          InstanceType="${{ inputs.INSTANCE_TYPE }}",
+          BlockDeviceMappings=block_device_mappings,
+          TagSpecifications=tag_spec,
+          UserData=f'''#!/bin/env bash
+        set -x
+        k="${{ inputs.RUNNER_NAME }}"
+        k+=",${{ inputs.RUNNER_TAGS }}"
+        k+=",$(wget -q -O - "http://169.254.169.254/latest/meta-data/instance-type")"
+        k+=",$(hostname -I | awk '{{print $1}}')"
+        cd /actions-runner
+        sudo -u ec2-user bash -c "\
+            ./config.sh --unattended \
+                        --url ${{ github.server_url }}/{runner_label} \
+                        --token ${{ inputs.TOKEN }} \
+                        --labels '$k' \
+                        --name '${{ inputs.RUNNER_NAME }}' \
+        "
+        ./svc.sh install ec2-user
+        ./svc.sh start
+        ''',
+        )
+        ec2_instance_id = response['Instances'][0]['InstanceId']
+        request_id = response['Instances'][0]['SpotInstanceRequestId']
+
+        print(f'ec2_instance_id={ec2_instance_id}')
+        print(f'request_id={request_id}')
+
+        ec2_client.get_waiter('instance_running').wait(InstanceIds=[ec2_instance_id], WaiterConfig={'Delay': 2, 'MaxAttempts': 90})

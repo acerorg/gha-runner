@@ -1,0 +1,34 @@
+name: registion token organization or repo level
+description: Getting runner's registion token for the Organization/repo level
+
+inputs:
+  scope:
+    description: 'org or repo, organization or repository level'
+    default: repo
+    required: True
+  token:
+    description: 'GitHub orgs scoped token'
+    required: True
+
+outputs:
+  token:
+    description: 'GitHub runner registion token'
+    value: ${{ steps.gen-github-action-registration-token.outputs.TOKEN }}
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      id: gen-github-action-registration-token
+      run: |
+        if [[ "${{ inputs.scope }}" == "org" ]]; then
+          url="${{ github.api_url }}/orgs/${{ github.repository_owner }}"
+        else
+          url="${{ github.api_url }}/repos/${{ github.repository }}"
+        fi
+        token="$(curl -X POST -s -u "git:${{ inputs.token }}" \
+                                 -H "Accept: application/vnd.github.v3+json" \
+                                 "${url}/actions/runners/registration-token" \
+                | jq -r '.token')"
+        echo "::add-mask::${token}"
+        echo "TOKEN=${token}" | tee -a $GITHUB_OUTPUT

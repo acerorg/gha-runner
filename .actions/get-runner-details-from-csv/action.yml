@@ -1,0 +1,59 @@
+name: Get runner details
+description: get self-hosted runner details from csv file
+
+inputs:
+  data_file_path:
+    description: Data file path to get runner details
+    required: True
+  name:
+    description: The target runner name
+    required: True
+
+outputs:
+  IP_CIDR:
+    description: ''
+    value: ${{ steps.get-runner-details.outputs.IP_CIDR }}
+  INSTANCE_TYPE:
+    description: ''
+    value: ${{ steps.get-runner-details.outputs.INSTANCE_TYPE }}
+  DISK_SIZE:
+    description: ''
+    value: ${{ steps.get-runner-details.outputs.DISK_SIZE }}
+  user_data:
+    description: ''
+    value: ${{ steps.get-runner-details.outputs.user_data }}
+  RUNNER_TAGS:
+    description: ''
+    value: ${{ steps.get-runner-details.outputs.RUNNER_TAGS }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: get-runner-details
+      shell: python
+      run: |
+        import os
+
+        setting_file_path = os.path.join(os.getcwd(), '${{ inputs.data_file_path }}')
+        with open(setting_file_path, 'r') as f:
+          runners_data = f.readlines()
+
+        setting_found = False
+        for line in runners_data:
+          l = line.strip()
+          if l.startswith('#') or len(l) == 0:
+            continue
+          if l.startswith('${{ inputs.name }},'):
+            setting_found=True
+            _, IP_CIDR, INSTANCE_TYPE, DISK_SIZE, user_data, RUNNER_TAGS = l.split(',', maxsplit=5)
+            break
+
+        if not setting_found:
+          raise Exception('Runner not found')
+
+        with open("${{ github.output }}", 'a') as f:
+          f.write(f'IP_CIDR={IP_CIDR}\n')
+          f.write(f'INSTANCE_TYPE={INSTANCE_TYPE}\n')
+          f.write(f'DISK_SIZE={str(int(DISK_SIZE))}\n')
+          f.write(f'user_data={user_data}\n')
+          f.write(f'RUNNER_TAGS={RUNNER_TAGS}\n')

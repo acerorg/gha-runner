@@ -1,5 +1,5 @@
-name: boot self-hosted runner
-description: boot self-hosted runner
+name: remove self-hosted runner
+description: remove self-hosted runner
 inputs:
   name:
     description: 'self-hosted runner name'
@@ -63,14 +63,7 @@ runs:
 
     - uses: ${{ github.action_path }}/.actions/use-python
 
-    - name: Prepare GitHub Action's registration-token
-      id: gen-github-action-registration-token
-      uses: ${{ github.action_path }}/.actions/get-reg-token
-      with:
-        scope: ${{ steps.settings.outputs.scope }}
-        token: ${{ steps.settings.outputs.token }}
-
-    - name: get runner details
+    - name: Get runner details
       id: get-runner-details
       uses: ${{ github.action_path }}/.actions/get-runner-details-from-csv
       with:
@@ -83,24 +76,37 @@ runs:
       with:
         ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
 
-    - name: Update launch teamplate to latest version
-      uses: ${{ github.action_path }}/.actions/ec2-launch-template-update
-
-    - name: Boot and register ec2 runner
-      uses: ${{ github.action_path }}/.actions/ec2-boot
+    - name: lookup EC2 ID and spot_request_id
+      id: get-ids
+      uses: ${{ github.action_path }}/.actions/ec2-lookup
       with:
         scope: ${{ steps.settings.outputs.scope }}
-        TOKEN: ${{ steps.gen-github-action-registration-token.outputs.token }}
         RUNNER_NAME: ${{ inputs.name }}
-        RUNNER_TAGS: ${{ steps.get-runner-details.outputs.RUNNER_TAGS }}
-        DISK_SIZE: ${{ steps.get-runner-details.outputs.DISK_SIZE }}
-        SUBNET_ID: ${{ steps.get-subnet-id-ip.outputs.subnet_id }}
         IP: ${{ steps.get-subnet-id-ip.outputs.ip_address }}
-        INSTANCE_TYPE: ${{ steps.get-runner-details.outputs.INSTANCE_TYPE }}
 
-    - name: Wait for Runner become Available and "online" in GitHub
-      uses: ${{ github.action_path }}/.actions/wait-runner-online
+    - name: terminate EC2
+      if: steps.get-ids.outputs.ec2_instance_id != ''
+      uses: ${{ github.action_path }}/.actions/ec2-terminate
+      with:
+        ec2_instance_id: ${{ steps.get-ids.outputs.ec2_instance_id }}
+        spot_instance_request_id: ${{ steps.get-ids.outputs.spot_instance_request_id }}
+
+    - name: Get Self-hosted Runner ID from GitHub
+      id: get-runner-id
+      uses: ${{ github.action_path }}/.actions/get-runner-id-by-runner-name
       with:
         scope: ${{ steps.settings.outputs.scope }}
         token: ${{ steps.settings.outputs.token }}
         name: ${{ inputs.name }}
+
+    - name: Remove Self-hosted Runner from GitHub
+      if: steps.get-runner-id.outputs.id != ''
+      shell: bash
+      run: |
+        if [[ "${{ steps.settings.outputs.scope }}" == "org" ]]; then
+          url="${{ github.api_url }}/orgs/${{ github.repository_owner }}"
+        else
+          url="${{ github.api_url }}/repos/${{ github.repository }}"
+        fi
+        curl -X DELETE -L -o - -u "git:${{ steps.settings.outputs.token }}" -H "Accept: application/vnd.github.v3+json" \
+            "${url}/actions/runners/${{ steps.get-runner-id.outputs.id }}"

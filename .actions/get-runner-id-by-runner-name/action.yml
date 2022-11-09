@@ -1,0 +1,40 @@
+name: get-runner-id-by-runner-name
+description: get-runner-id-by-runner-name
+
+inputs:
+  scope:
+    description: 'org or repo, organization or repository level'
+    default: repo
+    required: True
+  token:
+    description: 'GitHub orgs scoped token'
+    required: True
+  name:
+    description: 'GitHub orgs self-hosted runner name'
+    required: True
+
+outputs:
+  id:
+    description: 'GitHub orgs runner id'
+    value: ${{ steps.get-id.outputs.id }}
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      id: get-id
+      run: |
+        if [[ "${{ inputs.scope }}" == "org" ]]; then
+          url="${{ github.api_url }}/orgs/${{ github.repository_owner }}"
+        else
+          url="${{ github.api_url }}/repos/${{ github.repository }}"
+        fi
+        for page in {1..5}; do
+          echo $page
+          result="$(curl -s -u "git:${{ inputs.token }}" \
+                              -H "Accept: application/vnd.github.v3+json" \
+                              "${url}/actions/runners?per_page=100&page=${page}" \
+                    | jq -r ".runners[] | select(.name | contains(\"${{ inputs.name }}\")) | .id")"
+          if [[ "${result}" != "" ]]; then break; fi
+        done
+        echo "id=${result}" | tee -a $GITHUB_OUTPUT

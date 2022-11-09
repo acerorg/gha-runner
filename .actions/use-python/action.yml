@@ -1,0 +1,34 @@
+name: use python
+description: Use a correct version of python
+runs:
+  using: "composite"
+  steps:
+    - if: |
+        runner.name == 'Hosted Agent' &&
+        runner.tool_cache == '/opt/hostedtoolcache' &&
+        runner.temp == '/home/runner/work/_temp'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - if: |
+        runner.name == 'Hosted Agent' &&
+        runner.tool_cache == '/opt/hostedtoolcache' &&
+        runner.temp == '/home/runner/work/_temp'
+      run: pip install boto3 netaddr
+      shell: bash
+
+    - if: |
+        runner.name != 'Hosted Agent' ||
+        runner.tool_cache != '/opt/hostedtoolcache' ||
+        runner.temp != '/home/runner/work/_temp'
+      run: pyenv local 3.9
+      shell: bash
+
+    - shell: python
+      run: |
+        import sys
+        print(sys.version)
+
+    - shell: bash
+      run: pip list -v

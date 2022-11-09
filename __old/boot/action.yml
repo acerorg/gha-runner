@@ -1,0 +1,101 @@
+name: 'Boot Self-Hosted Runner'
+description: 'Booting and registering a self-hosted runner for github repo'
+
+inputs:
+  token:
+    description: 'GitHub Repo scoped token'
+    required: True
+  billing_id:
+    description: 'Billing ID for AWS resource tagging'
+    required: True
+  project_name:
+    description: 'Project Name for searching EC2 instance with ProjectName tag'
+    required: True
+  runner_name:
+    description: 'Runner registered name on GitHub Actions'
+    required: True
+  runner_tags:
+    description: 'Tagging info for the Runner on GitHub Actions'
+    required: true
+  runner_ip:
+    description: 'Private IP v4 addres for the EC2 instance Runner'
+    required: true
+  subnet_id:
+    description: 'AWS Subnet ID assigned to the current repo'
+    required: true
+  instance_type:
+    description: 'EC2 instance Type to use, look up available types here: https://aws.amazon.com/ec2/instance-types/'
+    default: c5n.xlarge
+    required: True
+  disk_size:
+    description: 'Total disk capacity (in GB) for EC2 instance runner'
+    default: '10'
+    required: True
+  user_data:
+    description: "EC2 Runner's init user data"
+    required: True
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get GitHub Action App's latest download URL
+      shell: bash
+      id: get-github-action-app-dl-url
+      run: |
+        dl_url="$(curl -s -H "Accept: application/vnd.github.v3+json" ${{ github.api_url }}/repos/actions/runner/releases/latest \
+                  | jq -r ".assets[] \
+                          | select(.name | contains(\"linux-x64\")) \
+                          | select(.name | contains(\"no\") | not) \
+                          | select(.name | contains(\"trim\") | not) \
+                          | .browser_download_url " \
+                  | head -1)"
+        echo "URL=${dl_url}" | tee -a $GITHUB_OUTPUT
+
+    - name: Prepare GitHub Action's registration-token
+      shell: bash
+      id: gen-github-action-registration-token
+      run: |
+        token="$(curl -X POST -s -u "git:${{ inputs.token }}" \
+                                 -H "Accept: application/vnd.github.v3+json" \
+                                 "${{ github.api_url }}/repos/${{ github.repository }}/actions/runners/registration-token" \
+                | jq -r '.token')"
+        echo "::add-mask::${token}"
+        echo "TOKEN=${token}" | tee -a $GITHUB_OUTPUT
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - run: pip install boto3
+      shell: bash
+
+    - name: Boot Ec2 Runner (running python script)
+      env:
+        E_BILLING_ID: ${{ inputs.billing_id }}
+        E_PROJECT_NAME: ${{ inputs.project_name }}
+        E_RUNNER_NAME: ${{ inputs.runner_name }}
+        E_RUNNER_TAGS: ${{ inputs.runner_tags }}
+        E_RUNNER_IP: ${{ inputs.runner_ip }}
+        E_SUBNET_ID: ${{ inputs.subnet_id }}
+        E_INSTANCE_TYPE: ${{ inputs.instance_type}}
+        E_DISK_SIZE: ${{ inputs.disk_size }}
+        E_USER_DATA: ${{ inputs.user_data }}
+        E_TOKEN: ${{ steps.gen-github-action-registration-token.outputs.TOKEN }}
+        E_URL: ${{ steps.get-github-action-app-dl-url.outputs.URL }}
+      run: |
+        ids="$(python "${{ github.action_path }}/aws_runner_boot.py")"
+        echo "EC2_ID=$(echo "${ids}" | cut -f1 -d',')"
+        echo "REQUEST_ID=$(echo "${ids}" | cut -f2 -d',')"
+      shell: bash
+
+    - name: Wait for Runner become Available and "online" in GitHub
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 15
+        max_attempts: 30
+        expected_result: online
+        checker_cmd: |
+          curl -s -u "git:${{ inputs.token }}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  ${{ github.api_url }}/repos/${{ github.repository }}/actions/runners \
+          | jq -r ".runners[] | select(.name | contains(\"${{ inputs.runner_name }}\")) | .status"

@@ -1,0 +1,39 @@
+name: IP SubNet by CIDR
+description: Find IP address and Subnet ID by IP's CIDR
+
+inputs:
+  ip_cidr:
+    description: IP's CIDR 
+    required: True
+
+outputs:
+  ip_address:
+    description: 'ip address by itself'
+    value: ${{ steps.get-subnet-id.outputs.RUNNER_IP }}
+  subnet_id:
+    description: 'Subnet ID of that IP address'
+    value: ${{ steps.get-subnet-id.outputs.SUBNET_ID }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: get-subnet-id
+      shell: python
+      run: |
+        import netaddr
+        import boto3
+        import os
+
+        ip = netaddr.IPNetwork('${{ inputs.ip_cidr }}')
+
+        subnet_cidr = f'{ip.network}/{ip.prefixlen}'
+        filters = [{'Name': 'cidr', 'Values': [subnet_cidr]}]
+        region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+        ec2_client = boto3.client('ec2', region_name=region)
+        response = ec2_client.describe_subnets(Filters=filters)
+
+        subnet_id = response['Subnets'][0]['SubnetId']
+
+        with open("${{ github.output }}", 'a') as f:
+          f.write(f'SUBNET_ID={subnet_id}\n')
+          f.write(f'RUNNER_IP={str(ip.ip)}\n')
