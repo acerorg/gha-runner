@@ -65,20 +65,20 @@ runs:
 
     - name: Get runner details
       id: get-runner-details
-      uses: ${{ github.action_path }}/.actions/get-runner-details-from-csv
+      uses: ./.actions/get-runner-details-from-csv
       with:
         data_file_path: ${{ steps.settings.outputs.runners_data_file }}
         name: ${{ inputs.name }}
 
     - name: Get Subnet Id and IP
       id: get-subnet-id-ip
-      uses: ${{ github.action_path }}/.actions/get-ip-subnet-by-cidr
+      uses: ./.actions/get-ip-subnet-by-cidr
       with:
         ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
 
     - name: lookup EC2 ID and spot_request_id
       id: get-ids
-      uses: ${{ github.action_path }}/.actions/ec2-lookup
+      uses: ./.actions/ec2-lookup
       with:
         scope: ${{ steps.settings.outputs.scope }}
         RUNNER_NAME: ${{ inputs.name }}
@@ -86,14 +86,14 @@ runs:
 
     - name: terminate EC2
       if: steps.get-ids.outputs.ec2_instance_id != ''
-      uses: ${{ github.action_path }}/.actions/ec2-terminate
+      uses: ./.actions/ec2-terminate
       with:
         ec2_instance_id: ${{ steps.get-ids.outputs.ec2_instance_id }}
         spot_instance_request_id: ${{ steps.get-ids.outputs.spot_instance_request_id }}
 
     - name: Get Self-hosted Runner ID from GitHub
       id: get-runner-id
-      uses: ${{ github.action_path }}/.actions/get-runner-id-by-runner-name
+      uses: ./.actions/get-runner-id-by-runner-name
       with:
         scope: ${{ steps.settings.outputs.scope }}
         token: ${{ steps.settings.outputs.token }}

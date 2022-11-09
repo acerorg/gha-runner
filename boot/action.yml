@@ -61,33 +61,33 @@ runs:
         echo "token=${token}" | tee -a $GITHUB_OUTPUT
         echo "runners_data_file=${runners_data_file}" | tee -a $GITHUB_OUTPUT
 
-    - uses: ${{ github.action_path }}/.actions/use-python
+    - uses: ./.actions/use-python
 
     - name: Prepare GitHub Action's registration-token
       id: gen-github-action-registration-token
-      uses: ${{ github.action_path }}/.actions/get-reg-token
+      uses: ./.actions/get-reg-token
       with:
         scope: ${{ steps.settings.outputs.scope }}
         token: ${{ steps.settings.outputs.token }}
 
     - name: get runner details
       id: get-runner-details
-      uses: ${{ github.action_path }}/.actions/get-runner-details-from-csv
+      uses: ./.actions/get-runner-details-from-csv
       with:
         data_file_path: ${{ steps.settings.outputs.runners_data_file }}
         name: ${{ inputs.name }}
 
     - name: Get Subnet Id and IP
       id: get-subnet-id-ip
-      uses: ${{ github.action_path }}/.actions/get-ip-subnet-by-cidr
+      uses: ./.actions/get-ip-subnet-by-cidr
       with:
         ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
 
     - name: Update launch teamplate to latest version
-      uses: ${{ github.action_path }}/.actions/ec2-launch-template-update
+      uses: ./.actions/ec2-launch-template-update
 
     - name: Boot and register ec2 runner
-      uses: ${{ github.action_path }}/.actions/ec2-boot
+      uses: ./.actions/ec2-boot
       with:
         scope: ${{ steps.settings.outputs.scope }}
         TOKEN: ${{ steps.gen-github-action-registration-token.outputs.token }}
@@ -99,7 +99,7 @@ runs:
         INSTANCE_TYPE: ${{ steps.get-runner-details.outputs.INSTANCE_TYPE }}
 
     - name: Wait for Runner become Available and "online" in GitHub
-      uses: ${{ github.action_path }}/.actions/wait-runner-online
+      uses: ./.actions/wait-runner-online
       with:
         scope: ${{ steps.settings.outputs.scope }}
         token: ${{ steps.settings.outputs.token }}
