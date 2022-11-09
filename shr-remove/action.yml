@@ -39,7 +39,7 @@ runs:
           if [[ "${{ env.gha-runner-token }}" != "" ]]; then
             token="${{ env.gha-runner-token }}"
           else
-            echo "::error ::Missing token in runner-remove action"
+            echo "::error ::Missing 'token' in gha-runner action"
             has_error="yes"
           fi
         fi
@@ -50,7 +50,7 @@ runs:
           if [[ "${{ env.gha-runner-runners_data_file }}" != "" ]]; then
             runners_data_file="${{ env.gha-runner-runners_data_file }}"
           else
-            echo "::error ::Missing runners_data_file in runner-remove action"
+            echo "::error ::Missing 'runners_data_file' in gha-runner action"
             has_error="yes"
           fi
         fi
@@ -62,6 +62,7 @@ runs:
         echo "runners_data_file=${runners_data_file}" | tee -a $GITHUB_OUTPUT
 
     - uses: acerorg/gha-runner/use-python@MIN-340
+    - uses: actions/checkout@v3
 
     - name: Get runner details
       id: get-runner-details
