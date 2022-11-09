@@ -1,5 +1,5 @@
-name: remove self-hosted runner
-description: remove self-hosted runner
+name: boot self-hosted runner
+description: boot self-hosted runner
 inputs:
   name:
     description: 'self-hosted runner name'
@@ -61,58 +61,46 @@ runs:
         echo "token=${token}" | tee -a $GITHUB_OUTPUT
         echo "runners_data_file=${runners_data_file}" | tee -a $GITHUB_OUTPUT
 
-        echo "action = ${{ github.action }}"
-        echo "action_path = ${{ github.action_path }}"
-        echo "action_ref = ${{ github.action_ref }}"
-        echo "action_repository = ${{ github.action_repository }}"
-        echo "action_status = ${{ github.action_status }}"
+    - uses: acerorg/gha-runner/use-python@MIN-340
 
-    - uses: ./.actions/use-python
+    - name: Prepare GitHub Action's registration-token
+      id: gen-github-action-registration-token
+      uses: acerorg/gha-runner/get-reg-token@MIN-340
+      with:
+        scope: ${{ steps.settings.outputs.scope }}
+        token: ${{ steps.settings.outputs.token }}
 
-    - name: Get runner details
+    - name: get runner details
       id: get-runner-details
-      uses: ./.actions/get-runner-details-from-csv
+      uses: acerorg/gha-runner/get-runner-details-from-csv@MIN-340
       with:
         data_file_path: ${{ steps.settings.outputs.runners_data_file }}
         name: ${{ inputs.name }}
 
     - name: Get Subnet Id and IP
       id: get-subnet-id-ip
-      uses: ./.actions/get-ip-subnet-by-cidr
+      uses: acerorg/gha-runner/get-ip-subnet-by-cidr@MIN-340
       with:
         ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
 
-    - name: lookup EC2 ID and spot_request_id
-      id: get-ids
-      uses: ./.actions/ec2-lookup
+    - name: Update launch teamplate to latest version
+      uses: acerorg/gha-runner/ec2-launch-template-update@MIN-340
+
+    - name: Boot and register ec2 runner
+      uses: acerorg/gha-runner/ec2-boot@MIN-340
       with:
         scope: ${{ steps.settings.outputs.scope }}
+        TOKEN: ${{ steps.gen-github-action-registration-token.outputs.token }}
         RUNNER_NAME: ${{ inputs.name }}
+        RUNNER_TAGS: ${{ steps.get-runner-details.outputs.RUNNER_TAGS }}
+        DISK_SIZE: ${{ steps.get-runner-details.outputs.DISK_SIZE }}
+        SUBNET_ID: ${{ steps.get-subnet-id-ip.outputs.subnet_id }}
         IP: ${{ steps.get-subnet-id-ip.outputs.ip_address }}
+        INSTANCE_TYPE: ${{ steps.get-runner-details.outputs.INSTANCE_TYPE }}
 
-    - name: terminate EC2
-      if: steps.get-ids.outputs.ec2_instance_id != ''
-      uses: ./.actions/ec2-terminate
-      with:
-        ec2_instance_id: ${{ steps.get-ids.outputs.ec2_instance_id }}
-        spot_instance_request_id: ${{ steps.get-ids.outputs.spot_instance_request_id }}
-
-    - name: Get Self-hosted Runner ID from GitHub
-      id: get-runner-id
-      uses: ./.actions/get-runner-id-by-runner-name
+    - name: Wait for Runner become Available and "online" in GitHub
+      uses: acerorg/gha-runner/wait-runner-online@MIN-340
       with:
         scope: ${{ steps.settings.outputs.scope }}
         token: ${{ steps.settings.outputs.token }}
         name: ${{ inputs.name }}
-
-    - name: Remove Self-hosted Runner from GitHub
-      if: steps.get-runner-id.outputs.id != ''
-      shell: bash
-      run: |
-        if [[ "${{ steps.settings.outputs.scope }}" == "org" ]]; then
-          url="${{ github.api_url }}/orgs/${{ github.repository_owner }}"
-        else
-          url="${{ github.api_url }}/repos/${{ github.repository }}"
-        fi
-        curl -X DELETE -L -o - -u "git:${{ steps.settings.outputs.token }}" -H "Accept: application/vnd.github.v3+json" \
-            "${url}/actions/runners/${{ steps.get-runner-id.outputs.id }}"
