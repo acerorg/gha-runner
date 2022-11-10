@@ -66,7 +66,7 @@ runs:
       if: steps.get-runner-id.outputs.id != ''
       uses: acerorg/gha-waiter@v0
       with:
-        delay: 5
+        delay: 3
         max_attempts: 20
         expected_result: online
         checker_cmd: |
