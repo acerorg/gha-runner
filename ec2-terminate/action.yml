@@ -8,7 +8,6 @@ inputs:
     description: 'spot_instance_request_id'
     required: true
 
-
 runs:
   using: "composite"
   steps:

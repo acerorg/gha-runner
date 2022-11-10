@@ -1,5 +1,5 @@
-name: remove self-hosted runner
-description: remove self-hosted runner
+name: stop self-hosted runner
+description: stop self-hosted runner
 inputs:
   name:
     description: 'self-hosted runner name'
@@ -48,12 +48,11 @@ runs:
         RUNNER_NAME: ${{ inputs.name }}
         IP: ${{ steps.get-subnet-id-ip.outputs.ip_address }}
 
-    - name: terminate EC2
+    - name: stop EC2
       if: steps.get-ids.outputs.ec2_instance_id != ''
-      uses: acerorg/gha-runner/ec2-terminate@MIN-340
+      uses: acerorg/gha-runner/ec2-stop@MIN-340
       with:
         ec2_instance_id: ${{ steps.get-ids.outputs.ec2_instance_id }}
-        spot_instance_request_id: ${{ steps.get-ids.outputs.spot_instance_request_id }}
 
     - name: Get Self-hosted Runner ID from GitHub
       id: get-runner-id
@@ -63,9 +62,14 @@ runs:
         token: ${{ steps.settings.outputs.token }}
         name: ${{ inputs.name }}
 
-    - name: Remove Self-hosted Runner from GitHub
+    - name: Wait Self-hosted Runner status change from GitHub
       if: steps.get-runner-id.outputs.id != ''
-      shell: bash
-      run: |
-        curl -X DELETE -L -o - -u "git:${{ steps.settings.outputs.token }}" -H "Accept: application/vnd.github.v3+json" \
-            "${{ steps.settings.outputs.url_base }}/actions/runners/${{ steps.get-runner-id.outputs.id }}"
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 2
+        max_attempts: 5
+        expected_result: offline
+        checker_cmd: |
+          curl -s -u "git:${{ steps.settings.outputs.token }}" -H "Accept: application/vnd.github.v3+json" \
+              "${{ steps.settings.outputs.url_base }}/actions/runners/${{ steps.get-runner-id.outputs.id }}" \
+          | jq -r ".runners[] | select(.name | contains(\"${{ inputs.name }}\")) | .status"

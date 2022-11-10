@@ -66,6 +66,13 @@ runs:
 
         if [[ "${has_error}" == "yes" ]]; then exit 1; fi
 
+        if [[ "${scope}" == "org" ]]; then
+          url="${{ github.api_url }}/orgs/${{ github.repository_owner }}"
+        else
+          url="${{ github.api_url }}/repos/${{ github.repository }}"
+        fi
+
         echo "scope=${scope}" | tee -a $GITHUB_OUTPUT
+        echo "url_base=${url}" | tee -a $GITHUB_OUTPUT
         echo "token=${token}" | tee -a $GITHUB_OUTPUT
         echo "runners_data_file=${runners_data_file}" | tee -a $GITHUB_OUTPUT
