@@ -72,4 +72,4 @@ runs:
         checker_cmd: |
           curl -s -u "git:${{ steps.settings.outputs.token }}" -H "Accept: application/vnd.github.v3+json" \
               "${{ steps.settings.outputs.url_base }}/actions/runners/${{ steps.get-runner-id.outputs.id }}" \
-          | jq -r ".runners[] | select(.name | contains(\"${{ inputs.name }}\")) | .status"
+          | jq -r ".status"
