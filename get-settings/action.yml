@@ -16,6 +16,9 @@ outputs:
   scope:
     description: 'org or repo, organization or repository level'
     value: ${{ steps.settings.outputs.scope }}
+  url_base:
+    description: 'github base url depending on scope'
+    value: ${{ steps.settings.outputs.url_base }}
   token:
     description: 'GitHub self-hosted runner registration token'
     value: ${{ steps.settings.outputs.token }}
