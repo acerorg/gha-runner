@@ -17,49 +17,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: prepare settings
-      id: settings
-      shell: bash
-      run: |
-        has_error="no"
-
-        if [[ "${{ inputs.scope }}" != "" ]]; then
-          scope="${{ inputs.scope }}"
-        else
-          if [[ "${{ env.gha-runner-scope }}" != "" ]]; then
-            scope="${{ env.gha-runner-scope }}"
-          else
-            scope="repo"
-          fi
-        fi
-
-        if [[ "${{ inputs.token }}" != "" ]]; then
-          token="${{ inputs.token }}"
-        else
-          if [[ "${{ env.gha-runner-token }}" != "" ]]; then
-            token="${{ env.gha-runner-token }}"
-          else
-            echo "::error ::Missing 'token' in gha-runner action"
-            has_error="yes"
-          fi
-        fi
-
-        if [[ "${{ inputs.runners_data_file }}" != "" ]]; then
-          runners_data_file="${{ inputs.runners_data_file }}"
-        else
-          if [[ "${{ env.gha-runner-runners_data_file }}" != "" ]]; then
-            runners_data_file="${{ env.gha-runner-runners_data_file }}"
-          else
-            echo "::error ::Missing 'runners_data_file' in gha-runner action"
-            has_error="yes"
-          fi
-        fi
-
-        if [[ "${has_error}" == "yes" ]]; then exit 1; fi
-
-        echo "scope=${scope}" | tee -a $GITHUB_OUTPUT
-        echo "token=${token}" | tee -a $GITHUB_OUTPUT
-        echo "runners_data_file=${runners_data_file}" | tee -a $GITHUB_OUTPUT
+    - id: settings
+      uses: acerorg/gha-runner/get-settings@MIN-340
+      with:
+        scope: ${{ inputs.scope }}
+        token: ${{ inputs.token }}
+        runners_data_file: ${{ inputs.runners_data_file }}
 
     - uses: acerorg/gha-runner/use-python@MIN-340
     - uses: actions/checkout@v3
