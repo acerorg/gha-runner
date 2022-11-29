@@ -14,6 +14,9 @@ inputs:
   RUNNER_TAGS:
     description: 'GitHub self-hosted runner extra tags'
     required: True
+  AMI_ID:
+    description: 'GitHub self-hosted runner AMI ID'
+    required: True
   DISK_SIZE:
     description: 'GitHub self-hosted runner disk capacity in GB'
     required: True
@@ -70,6 +73,7 @@ runs:
 
         response = ec2_client.run_instances(
           LaunchTemplate={'LaunchTemplateName': template_name},
+          ImageId="${{ inputs.AMI_ID }}",
           MaxCount=1,
           MinCount=1,
           SubnetId="${{ inputs.SUBNET_ID }}",

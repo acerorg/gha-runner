@@ -57,6 +57,7 @@ runs:
         TOKEN: ${{ steps.gen-github-action-registration-token.outputs.token }}
         RUNNER_NAME: ${{ inputs.name }}
         RUNNER_TAGS: ${{ steps.get-runner-details.outputs.RUNNER_TAGS }}
+        AMI_ID: ${{ steps.get-runner-details.outputs.AMI_ID }}
         DISK_SIZE: ${{ steps.get-runner-details.outputs.DISK_SIZE }}
         SUBNET_ID: ${{ steps.get-subnet-id-ip.outputs.subnet_id }}
         IP: ${{ steps.get-subnet-id-ip.outputs.ip_address }}

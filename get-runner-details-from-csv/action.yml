@@ -19,9 +19,9 @@ outputs:
   DISK_SIZE:
     description: ''
     value: ${{ steps.get-runner-details.outputs.DISK_SIZE }}
-  user_data:
+  AMI_ID:
     description: ''
-    value: ${{ steps.get-runner-details.outputs.user_data }}
+    value: ${{ steps.get-runner-details.outputs.AMI_ID }}
   RUNNER_TAGS:
     description: ''
     value: ${{ steps.get-runner-details.outputs.RUNNER_TAGS }}
@@ -45,7 +45,7 @@ runs:
             continue
           if l.startswith('${{ inputs.name }},'):
             setting_found=True
-            _, IP_CIDR, INSTANCE_TYPE, DISK_SIZE, user_data, RUNNER_TAGS = l.split(',', maxsplit=5)
+            _, IP_CIDR, INSTANCE_TYPE, DISK_SIZE, AMI_ID, RUNNER_TAGS = l.split(',', maxsplit=5)
             break
 
         if not setting_found:
@@ -55,5 +55,5 @@ runs:
           f.write(f'IP_CIDR={IP_CIDR}\n')
           f.write(f'INSTANCE_TYPE={INSTANCE_TYPE}\n')
           f.write(f'DISK_SIZE={str(int(DISK_SIZE))}\n')
-          f.write(f'user_data={user_data}\n')
+          f.write(f'AMI_ID={AMI_ID}\n')
           f.write(f'RUNNER_TAGS={RUNNER_TAGS}\n')
