@@ -40,6 +40,7 @@ runs:
           {"Name": "instance-state-name", "Values": ["pending", 'running', 'shutting-down', 'stopping', 'stopped']},
           {'Name': 'tag:BillingID', 'Values': [billing_id]},
           {'Name': 'tag:ProjectName', 'Values': [project_name]},
+          {'Name': 'tag:Env', 'Values': [f'GitHub Action Runner @ {runner_label}']},
           {'Name': 'tag:EnvName', 'Values': [f'GitHub Action Runner @ {runner_label}']},
           {'Name': 'tag:RepoName', 'Values': [runner_label]},
           {'Name': 'tag:GitHub', 'Values': ['ActionRunner']},

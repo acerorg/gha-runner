@@ -48,6 +48,7 @@ runs:
         tags = [
           {'Key': 'BillingID', 'Value': billing_id},
           {'Key': 'ProjectName', 'Value': project_name},
+          {'Key': 'Env', 'Value': f'GitHub Action Runner @ {runner_label}'},
           {'Key': 'EnvName', 'Value': f'GitHub Action Runner @ {runner_label}'},
           {'Key': 'RepoName', 'Value': runner_label},
           {'Key': 'GitHub', 'Value': 'ActionRunner'},
