@@ -17,4 +17,4 @@ runs:
         ec2_client = boto3.client('ec2', region_name=region)
 
         ec2_client.stop_instances(InstanceIds=['${{ inputs.ec2_instance_id }}'])
-        ec2_client.get_waiter('instance_stopped').wait(InstanceIds=['${{ inputs.ec2_instance_id }}'], WaiterConfig={'Delay': 2, 'MaxAttempts': 90})
+        ec2_client.get_waiter('instance_stopped').wait(InstanceIds=['${{ inputs.ec2_instance_id }}'], WaiterConfig={'Delay': 2, 'MaxAttempts': 900})
