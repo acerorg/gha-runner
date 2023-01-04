@@ -1,0 +1,14 @@
+name: update launch template
+description: Update launch template to latest version
+runs:
+  using: "composite"
+  steps:
+    - shell: python
+      run: |
+        import boto3
+        import os
+
+        region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+        ec2_client = boto3.client('ec2', region_name=region)
+        template_name = f'GitHub/Runner/${{ github.repository_owner }}'
+        ec2_client.modify_launch_template(LaunchTemplateName=template_name, DefaultVersion='$Latest')

@@ -1,0 +1,71 @@
+name: boot self-hosted runner
+description: boot self-hosted runner
+inputs:
+  name:
+    description: 'self-hosted runner name'
+    required: true
+  scope:
+    description: 'org or repo, organization or repository level'
+    required: false
+  token:
+    description: 'GitHub self-hosted runner registration token'
+    required: false
+  runners_data_file:
+    description: 'where to get the csv file for runners data'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - id: settings
+      uses: acerorg/gha-runner/get-settings@MIN-340
+      with:
+        scope: ${{ inputs.scope }}
+        token: ${{ inputs.token }}
+        runners_data_file: ${{ inputs.runners_data_file }}
+
+    - uses: acerorg/gha-runner/use-python@MIN-340
+    - uses: actions/checkout@v3
+
+    - name: Prepare GitHub Action's registration-token
+      id: gen-github-action-registration-token
+      uses: acerorg/gha-runner/get-reg-token@MIN-340
+      with:
+        scope: ${{ steps.settings.outputs.scope }}
+        token: ${{ steps.settings.outputs.token }}
+
+    - name: get runner details
+      id: get-runner-details
+      uses: acerorg/gha-runner/get-runner-details-from-csv@MIN-340
+      with:
+        data_file_path: ${{ steps.settings.outputs.runners_data_file }}
+        name: ${{ inputs.name }}
+
+    - name: Get Subnet Id and IP
+      id: get-subnet-id-ip
+      uses: acerorg/gha-runner/get-ip-subnet-by-cidr@MIN-340
+      with:
+        ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
+
+    - name: Update launch teamplate to latest version
+      uses: acerorg/gha-runner/ec2-launch-template-update@MIN-340
+
+    - name: Boot and register ec2 runner
+      uses: acerorg/gha-runner/ec2-boot@MIN-340
+      with:
+        scope: ${{ steps.settings.outputs.scope }}
+        TOKEN: ${{ steps.gen-github-action-registration-token.outputs.token }}
+        RUNNER_NAME: ${{ inputs.name }}
+        RUNNER_TAGS: ${{ steps.get-runner-details.outputs.RUNNER_TAGS }}
+        AMI_ID: ${{ steps.get-runner-details.outputs.AMI_ID }}
+        DISK_SIZE: ${{ steps.get-runner-details.outputs.DISK_SIZE }}
+        SUBNET_ID: ${{ steps.get-subnet-id-ip.outputs.subnet_id }}
+        IP: ${{ steps.get-subnet-id-ip.outputs.ip_address }}
+        INSTANCE_TYPE: ${{ steps.get-runner-details.outputs.INSTANCE_TYPE }}
+
+    - name: Wait for Runner become Available and "online" in GitHub
+      uses: acerorg/gha-runner/wait-runner-online@MIN-340
+      with:
+        scope: ${{ steps.settings.outputs.scope }}
+        token: ${{ steps.settings.outputs.token }}
+        name: ${{ inputs.name }}

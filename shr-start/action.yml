@@ -1,0 +1,75 @@
+name: start self-hosted runner
+description: start self-hosted runner
+inputs:
+  name:
+    description: 'self-hosted runner name'
+    required: true
+  scope:
+    description: 'org or repo, organization or repository level'
+    required: false
+  token:
+    description: 'GitHub self-hosted runner registration token'
+    required: false
+  runners_data_file:
+    description: 'where to get the csv file for runners data'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - id: settings
+      uses: acerorg/gha-runner/get-settings@MIN-340
+      with:
+        scope: ${{ inputs.scope }}
+        token: ${{ inputs.token }}
+        runners_data_file: ${{ inputs.runners_data_file }}
+
+    - uses: acerorg/gha-runner/use-python@MIN-340
+    - uses: actions/checkout@v3
+
+    - name: Get runner details
+      id: get-runner-details
+      uses: acerorg/gha-runner/get-runner-details-from-csv@MIN-340
+      with:
+        data_file_path: ${{ steps.settings.outputs.runners_data_file }}
+        name: ${{ inputs.name }}
+
+    - name: Get Subnet Id and IP
+      id: get-subnet-id-ip
+      uses: acerorg/gha-runner/get-ip-subnet-by-cidr@MIN-340
+      with:
+        ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
+
+    - name: lookup EC2 ID and spot_request_id
+      id: get-ids
+      uses: acerorg/gha-runner/ec2-lookup@MIN-340
+      with:
+        scope: ${{ steps.settings.outputs.scope }}
+        RUNNER_NAME: ${{ inputs.name }}
+        IP: ${{ steps.get-subnet-id-ip.outputs.ip_address }}
+
+    - name: start EC2
+      if: steps.get-ids.outputs.ec2_instance_id != ''
+      uses: acerorg/gha-runner/ec2-start@MIN-340
+      with:
+        ec2_instance_id: ${{ steps.get-ids.outputs.ec2_instance_id }}
+
+    - name: Get Self-hosted Runner ID from GitHub
+      id: get-runner-id
+      uses: acerorg/gha-runner/get-runner-id-by-runner-name@MIN-340
+      with:
+        scope: ${{ steps.settings.outputs.scope }}
+        token: ${{ steps.settings.outputs.token }}
+        name: ${{ inputs.name }}
+
+    - name: Wait Self-hosted Runner status change from GitHub
+      if: steps.get-runner-id.outputs.id != ''
+      uses: acerorg/gha-waiter@v0
+      with:
+        delay: 3
+        max_attempts: 20
+        expected_result: online
+        checker_cmd: |
+          curl -s -u "git:${{ steps.settings.outputs.token }}" -H "Accept: application/vnd.github.v3+json" \
+              "${{ steps.settings.outputs.url_base }}/actions/runners/${{ steps.get-runner-id.outputs.id }}" \
+          | jq -r ".status"

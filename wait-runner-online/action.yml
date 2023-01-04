@@ -1,0 +1,41 @@
+name: wait runner online
+description: Waiting for self hosted runner to become online
+inputs:
+  scope:
+    description: 'org or repo, organization or repository level'
+    default: repo
+    required: True
+  token:
+    description: 'GitHub orgs scoped token'
+    required: True
+  name:
+    description: 'GitHub self-hosted runner name'
+    required: True
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      id: url
+      run: |
+        if [[ "${{ inputs.scope }}" == "org" ]]; then
+          echo "url=${{ github.api_url }}/orgs/${{ github.repository_owner }}" | tee -a $GITHUB_OUTPUT
+        else
+          echo "url=${{ github.api_url }}/repos/${{ github.repository }}" | tee -a $GITHUB_OUTPUT
+        fi
+
+    - uses: acerorg/gha-waiter@v0
+      with:
+        delay: 10
+        max_attempts: 50
+        expected_result: online
+        checker_cmd: |
+          for page in {1..5}; do
+            result=$(curl -s -u "git:${{ inputs.token }}" \
+                               -H "Accept: application/vnd.github.v3+json" \
+                               "${{ steps.url.outputs.url }}/actions/runners?per_page=100&page=${page}" \
+                       | jq -r ".runners[] | select(.name | contains(\"${{ inputs.name }}\")) | .status"
+                      )
+            if [[ "${result}" != "" ]]; then break; fi
+          done
+          echo "${result}"

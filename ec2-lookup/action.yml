@@ -1,0 +1,62 @@
+name: lookup ec2 runner
+description: lookup ec2 runner
+
+inputs:
+  scope:
+    description: 'org or repo, organization or repository level'
+    default: repo
+    required: True
+  RUNNER_NAME:
+    description: 'GitHub self-hosted runner name'
+    required: True
+  IP:
+    description: 'GitHub self-hosted runner ipv4 address'
+    required: True
+
+outputs:
+  ec2_instance_id:
+    description: 'ec2_instance_id'
+    value: ${{ steps.get-id.outputs.ec2_instance_id }}
+  spot_instance_request_id:
+    description: 'spot_instance_request_id'
+    value: ${{ steps.get-id.outputs.spot_instance_request_id }}
+
+runs:
+  using: "composite"
+  steps:
+    - shell: python
+      id: get-id
+      run: |
+        import boto3
+        import os
+
+        runner_label = '${{ github.repository_owner }}' if '${{ inputs.scope }}' == 'org' else '${{ github.repository }}'
+        region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+        billing_id = os.environ.get('BILLING_ID', 'ACERORG')
+        project_name = os.environ.get('PROJECT_NAME', 'GitHub')
+        ec2_resource = boto3.resource('ec2', region_name=region)
+
+        filters  = [
+          {"Name": "instance-state-name", "Values": ["pending", 'running', 'shutting-down', 'stopping', 'stopped']},
+          {'Name': 'tag:BillingID', 'Values': [billing_id]},
+          {'Name': 'tag:ProjectName', 'Values': [project_name]},
+          {'Name': 'tag:Env', 'Values': [f'GitHub Action Runner @ {runner_label}']},
+          {'Name': 'tag:EnvName', 'Values': [f'GitHub Action Runner @ {runner_label}']},
+          {'Name': 'tag:RepoName', 'Values': [runner_label]},
+          {'Name': 'tag:GitHub', 'Values': ['ActionRunner']},
+          {'Name': 'tag:Name', 'Values': [f'GitHub/Runner/{runner_label}/${{ inputs.RUNNER_NAME }}']},
+          {'Name': 'tag:RunnerName', 'Values': ['${{ inputs.RUNNER_NAME }}']},
+          {'Name': 'private-ip-address', 'Values': ['${{ inputs.IP }}']},
+        ]
+        instances = ec2_resource.instances.filter(Filters=filters)
+        for instance in instances:
+          ec2_instance_id = instance.id
+          spot_instance_request_id = instance.spot_instance_request_id
+          break
+        else:
+          print("No instance Found")
+          exit()
+
+        with open("${{ github.output }}", 'a') as f:
+          f.write(f'ec2_instance_id={ec2_instance_id}\n')
+          f.write(f'spot_instance_request_id={spot_instance_request_id}\n')

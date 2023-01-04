@@ -1,5 +1,5 @@
 name: Update Main Version
-run-name: Move ${{ github.event.inputs.main_version }} to ${{ github.event.inputs.target }}
+run-name: Move ${{ inputs.main_version }} to ${{ inputs.target }}
 
 on:
   workflow_dispatch:
@@ -24,10 +24,10 @@ jobs:
         git config user.name github-actions
         git config user.email github-actions@github.com
     - name: Create new tag
-      run: git tag -a ${{ github.event.inputs.target }} -m 'version update'
+      run: git tag -a ${{ inputs.target }} -m 'version update'
     - name: Push new tag
       run: git push origin --tags
     - name: Tag new target
-      run: git tag -f ${{ github.event.inputs.main_version }} ${{ github.event.inputs.target }}
+      run: git tag -f ${{ inputs.main_version }} ${{ inputs.target }}
     - name: Push new main tag
-      run: git push origin ${{ github.event.inputs.main_version }} --force
+      run: git push origin ${{ inputs.main_version }} --force

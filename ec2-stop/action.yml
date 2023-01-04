@@ -1,0 +1,20 @@
+name: Stop EC2 instance
+description: Stopping EC2 instance
+inputs:
+  ec2_instance_id:
+    description: 'ec2_instance_id'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - shell: python
+      run: |
+        import boto3
+        import os
+
+        region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+        ec2_client = boto3.client('ec2', region_name=region)
+
+        ec2_client.stop_instances(InstanceIds=['${{ inputs.ec2_instance_id }}'])
+        ec2_client.get_waiter('instance_stopped').wait(InstanceIds=['${{ inputs.ec2_instance_id }}'], WaiterConfig={'Delay': 2, 'MaxAttempts': 900})
