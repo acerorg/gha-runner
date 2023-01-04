@@ -18,31 +18,31 @@ runs:
   using: "composite"
   steps:
     - id: settings
-      uses: acerorg/gha-runner/get-settings@MIN-340
+      uses: acerorg/gha-runner/get-settings@v1
       with:
         scope: ${{ inputs.scope }}
         token: ${{ inputs.token }}
         runners_data_file: ${{ inputs.runners_data_file }}
 
-    - uses: acerorg/gha-runner/use-python@MIN-340
+    - uses: acerorg/gha-runner/use-python@v1
     - uses: actions/checkout@v3
 
     - name: Get runner details
       id: get-runner-details
-      uses: acerorg/gha-runner/get-runner-details-from-csv@MIN-340
+      uses: acerorg/gha-runner/get-runner-details-from-csv@v1
       with:
         data_file_path: ${{ steps.settings.outputs.runners_data_file }}
         name: ${{ inputs.name }}
 
     - name: Get Subnet Id and IP
       id: get-subnet-id-ip
-      uses: acerorg/gha-runner/get-ip-subnet-by-cidr@MIN-340
+      uses: acerorg/gha-runner/get-ip-subnet-by-cidr@v1
       with:
         ip_cidr: ${{ steps.get-runner-details.outputs.IP_CIDR }}
 
     - name: lookup EC2 ID and spot_request_id
       id: get-ids
-      uses: acerorg/gha-runner/ec2-lookup@MIN-340
+      uses: acerorg/gha-runner/ec2-lookup@v1
       with:
         scope: ${{ steps.settings.outputs.scope }}
         RUNNER_NAME: ${{ inputs.name }}
@@ -50,14 +50,14 @@ runs:
 
     - name: terminate EC2
       if: steps.get-ids.outputs.ec2_instance_id != ''
-      uses: acerorg/gha-runner/ec2-terminate@MIN-340
+      uses: acerorg/gha-runner/ec2-terminate@v1
       with:
         ec2_instance_id: ${{ steps.get-ids.outputs.ec2_instance_id }}
         spot_instance_request_id: ${{ steps.get-ids.outputs.spot_instance_request_id }}
 
     - name: Get Self-hosted Runner ID from GitHub
       id: get-runner-id
-      uses: acerorg/gha-runner/get-runner-id-by-runner-name@MIN-340
+      uses: acerorg/gha-runner/get-runner-id-by-runner-name@v1
       with:
         scope: ${{ steps.settings.outputs.scope }}
         token: ${{ steps.settings.outputs.token }}

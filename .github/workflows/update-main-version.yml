@@ -10,7 +10,7 @@ on:
       main_version:
         required: true
         description: The main version to update
-        default: v0
+        default: v1
 
 jobs:
   tag:
